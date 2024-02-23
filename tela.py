@@ -9,11 +9,9 @@ from PIL import Image, ImageTk
 # tkcalendar
 from tkcalendar import Calendar, DateEntry
 from datetime import date
+import datetime as dt  # Usando um alias para evitar conflitos de nomes
 
-from datetime import datetime
-
-# importando o TkScrolledframe
-from tkscrolledframe import ScrolledFrame
+from datetime import datetime, timedelta
 
 # importar view
 from view import *
@@ -37,7 +35,7 @@ co11 = "#f2f4f2"
 
 janela = Tk()
 janela.title("")
-janela.geometry('1260x660')
+janela.geometry('1420x640')
 janela.configure(background=co1)
 janela.resizable(width=FALSE, height=FALSE)
 
@@ -47,13 +45,13 @@ style.theme_use("clam")
 
 # Frames -----------------------------------------------------
 
-frameCima = Frame(janela, width=1540, height=100, bg=co6,  relief="flat",)
+frameCima = Frame(janela, width=1420, height=100, bg=co6,  relief="flat",)
 frameCima.grid(row=0, column=0, columnspan=2, sticky=NSEW)
 
-frameEsquerda = Frame(janela, width=300, height=530, bg=co4,  relief="solid",)
+frameEsquerda = Frame(janela, width=710, height=540, bg=co4,  relief="solid",)
 frameEsquerda.grid(row=1, column=0, sticky=NSEW)
 
-frameDireita = Frame(janela, width=1200, height=530, bg=co1, relief="raised")
+frameDireita = Frame(janela, width=650, height=540, bg=co1, relief="raised")
 frameDireita.grid(row=1, column=1, sticky=NSEW)
 
 
@@ -65,7 +63,7 @@ app_img = Image.open(
 app_img = app_img.resize((80, 80))
 app_img = ImageTk.PhotoImage(app_img)
 
-app_logo = Label(frameCima, image=app_img, width=2000,
+app_logo = Label(frameCima, image=app_img, width=1000,
                  compound=LEFT, padx=5, relief=FLAT, anchor=NW, bg=co6, fg=co1)
 app_logo.place(x=5, y=0)
 
@@ -73,7 +71,7 @@ app_ = Label(frameCima, text="Sistema de Gerenciamento de Bibliotecas - UFPE", c
              padx=5, relief=FLAT, anchor=NW, font=('Verdana 15 bold'), bg=co6, fg=co1)
 app_.place(x=100, y=25)
 
-l_linha = Label(frameCima, width=1260, height=1, anchor=NW,
+l_linha = Label(frameCima, width=1570, height=1, anchor=NW,
                 font=('Verdana 1 '), bg=co3, fg=co1)
 l_linha.place(x=0, y=93)
 
@@ -90,6 +88,8 @@ def novo_usuario():
         address = e_endereco.get()
         email = e_email.get()
         phone = e_numero.get()
+        # Obtendo o tipo de usuário selecionado no combobox
+        user_type = combo_tipo_usuario.get()
 
         lista = [first_name, type_name, address, email, phone]
 
@@ -100,7 +100,7 @@ def novo_usuario():
                 return
 
         # Inserindo os dados no banco de dados
-        insert_user(first_name, type_name, address, email, phone)
+        insert_user(first_name, type_name, address, email, phone, user_type)
 
         # Mostrando mesnsagem de sucesso
         messagebox.showinfo('Sucesso', 'Usuário inserido com sucesso!')
@@ -115,39 +115,47 @@ def novo_usuario():
     app_ = Label(frameDireita, text="Inserir um novo usuário", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=4, sticky=NSEW)
-    l_linha = Label(frameDireita, width=400, height=1,
+    l_linha = Label(frameDireita, width=200, height=1,
                     anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.grid(row=1, column=0, columnspan=4, sticky=NSEW)
 
-    l_p_nome = Label(frameDireita, text="Nome Completo*",
+    l_p_nome = Label(frameDireita, text="Nome Completo:*",
                      height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
     l_p_nome.grid(row=2, column=0, padx=5, pady=10, sticky=NSEW)
-    e_p_nome = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_p_nome = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_p_nome.grid(row=2, column=1, pady=10, sticky=NSEW)
 
-    l_filiacao = Label(frameDireita, text="Filiacao*",
+    l_filiacao = Label(frameDireita, text="Filiação [departamento ou curso]*",
                        height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
     l_filiacao.grid(row=3, column=0, padx=5, pady=5, sticky=NSEW)
-    e_filiacao = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_filiacao = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_filiacao.grid(row=3, column=1, pady=5, sticky=NSEW)
 
-    l_endereco = Label(frameDireita, text="Endereço do usuário*",
+    l_endereco = Label(frameDireita, text="Endereço do usuário:",
                        height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_endereco.grid(row=4, column=0, padx=5, pady=5, sticky=NSEW)
-    e_endereco = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_endereco = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_endereco.grid(row=4, column=1, pady=5, sticky=NSEW)
 
-    l_email = Label(frameDireita, text="Endereço de e-mail*",
+    l_email = Label(frameDireita, text="Endereço de e-mail:*",
                     height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_email.grid(row=5, column=0, padx=5, pady=5, sticky=NSEW)
-    e_email = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_email = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_email.grid(row=5, column=1, pady=5, sticky=NSEW)
 
-    l_numero = Label(frameDireita, text="Número de telefone*",
+    l_numero = Label(frameDireita, text="Número de telefone:*",
                      height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_numero.grid(row=6, column=0, padx=5, pady=5, sticky=NSEW)
-    e_numero = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_numero = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_numero.grid(row=6, column=1, pady=5, sticky=NSEW)
+
+    # Combobox para selecionar o tipo de usuário
+    l_tipo_usuario = Label(frameDireita, text="Tipo de Usuário:",
+                           height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
+    l_tipo_usuario.grid(row=7, column=0, padx=5, pady=5, sticky=NSEW)
+    combo_tipo_usuario = ttk.Combobox(frameDireita, values=[
+                                      "Aluno de graduação", "Aluno de pós-graduação", "Professor"])
+    combo_tipo_usuario.grid(row=7, column=1, pady=5, sticky=NSEW)
 
     # Botao Salvar--------------------
     img_salvar = Image.open(
@@ -155,11 +163,12 @@ def novo_usuario():
     img_salvar = img_salvar.resize((36, 36))
     img_salvar = ImageTk.PhotoImage(img_salvar)
     b_salvar = Button(frameDireita, command=add, image=img_salvar, compound=LEFT,
-                      width=200, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
-    b_salvar.grid(row=7, column=1, pady=5, sticky=NSEW)
-
+                      width=100, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
+    b_salvar.grid(row=8, column=1, pady=5, sticky=NSEW)
 
 # Novo livro
+
+
 def novo_livro():
 
     global img_salvar
@@ -196,38 +205,38 @@ def novo_livro():
     app_ = Label(frameDireita, text="Inserir um Novo Livro", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
-    l_linha = Label(frameDireita, width=400, height=1,
+    l_linha = Label(frameDireita, width=100, height=1,
                     anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
     l_titlo = Label(frameDireita, text="Título do livro*",
                     height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
     l_titlo.grid(row=2, column=0, padx=5, pady=10, sticky=NSEW)
-    e_titlo = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_titlo = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_titlo.grid(row=2, column=1, pady=10, sticky=NSEW)
 
     l_autor = Label(frameDireita, text="Autor do livro*",
                     height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
     l_autor.grid(row=3, column=0, padx=5, pady=5, sticky=NSEW)
-    e_autor = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_autor = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_autor.grid(row=3, column=1, pady=5, sticky=NSEW)
 
     l_editora = Label(frameDireita, text="Editora do livro*",
                       height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_editora.grid(row=4, column=0, padx=5, pady=5, sticky=NSEW)
-    e_editora = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_editora = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_editora.grid(row=4, column=1, pady=5, sticky=NSEW)
 
     l_ano = Label(frameDireita, text="Ano de publicação do livro*",
                   height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_ano.grid(row=5, column=0, padx=5, pady=5, sticky=NSEW)
-    e_ano = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_ano = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_ano.grid(row=5, column=1, pady=5, sticky=NSEW)
 
     l_isbn = Label(frameDireita, text="ISBN do livro*", height=1,
                    anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_isbn.grid(row=6, column=0, padx=5, pady=5, sticky=NSEW)
-    e_isbn = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_isbn = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_isbn.grid(row=6, column=1, pady=5, sticky=NSEW)
 
     # Botao Salvar--------------------
@@ -236,7 +245,7 @@ def novo_livro():
     img_salvar = img_salvar.resize((36, 36))
     img_salvar = ImageTk.PhotoImage(img_salvar)
     b_salvar = Button(frameDireita, command=add, image=img_salvar, compound=LEFT,
-                      width=200, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
+                      width=100, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
     b_salvar.grid(row=7, column=1, pady=5, sticky=NSEW)
 
 # nova revista
@@ -280,44 +289,44 @@ def nova_revista():
     app_ = Label(frameDireita, text="Inserir uma Nova Revista", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
-    l_linha = Label(frameDireita, width=400, height=1,
+    l_linha = Label(frameDireita, width=200, height=1,
                     anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
     l_titlo = Label(frameDireita, text="Título da Revista*",
                     height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
     l_titlo.grid(row=2, column=0, padx=5, pady=10, sticky=NSEW)
-    e_titlo = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_titlo = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_titlo.grid(row=2, column=1, pady=10, sticky=NSEW)
 
     l_autor = Label(frameDireita, text="Autor da Revista*",
                     height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
     l_autor.grid(row=3, column=0, padx=5, pady=5, sticky=NSEW)
-    e_autor = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_autor = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_autor.grid(row=3, column=1, pady=5, sticky=NSEW)
 
     l_editora = Label(frameDireita, text="Editora da Revista*",
                       height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_editora.grid(row=4, column=0, padx=5, pady=5, sticky=NSEW)
-    e_editora = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_editora = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_editora.grid(row=4, column=1, pady=5, sticky=NSEW)
 
     l_ano = Label(frameDireita, text="Ano de publicação da Revista*",
                   height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_ano.grid(row=5, column=0, padx=5, pady=5, sticky=NSEW)
-    e_ano = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_ano = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_ano.grid(row=5, column=1, pady=5, sticky=NSEW)
 
     l_issn = Label(frameDireita, text="ISSN da Revista*", height=1,
                    anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_issn.grid(row=6, column=0, padx=5, pady=5, sticky=NSEW)
-    e_issn = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_issn = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_issn.grid(row=6, column=1, pady=5, sticky=NSEW)
 
     l_volume = Label(frameDireita, text="volume da Revista*", height=1,
                      anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
     l_volume.grid(row=7, column=0, padx=5, pady=5, sticky=NSEW)
-    e_volume = Entry(frameDireita, width=50, justify='left', relief="solid")
+    e_volume = Entry(frameDireita, width=25, justify='left', relief="solid")
     e_volume.grid(row=7, column=1, pady=5, sticky=NSEW)
 
     # Botao Salvar--------------------
@@ -326,7 +335,103 @@ def nova_revista():
     img_salvar = img_salvar.resize((36, 36))
     img_salvar = ImageTk.PhotoImage(img_salvar)
     b_salvar = Button(frameDireita, command=add, image=img_salvar, compound=LEFT,
-                      width=200, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
+                      width=100, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
+    b_salvar.grid(row=8, column=1, pady=5, sticky=NSEW)
+
+# nova tese
+
+
+def nova_tese():
+
+    global img_salvar
+
+    def add():
+
+        title = e_titlo.get()
+        author = e_autor.get()
+        graduate_program = e_programa_de_pos_graduacao.get()
+        year = e_ano.get()
+        advisor = e_orientador.get()
+        co_supervisor = e_co_orientador.get()
+
+        lista = [title, author, graduate_program,
+                 year, advisor,  co_supervisor]
+
+        # Verificando caso algum campo esteja vazio ou nao
+        for i in lista:
+            if i == '':
+                messagebox.showerror('Erro', 'Preencha todos os campos')
+                return
+
+        # Inserindo os dados no banco de dados
+        insert_thesis(title, author, graduate_program,
+                      year, advisor,  co_supervisor)
+
+        # Mostrando mesnsagem de sucesso
+        messagebox.showinfo('Sucesso', 'Tese inserido com sucesso!')
+
+        # limpando os campos de entradas
+        e_titlo.delete(0, END)
+        e_autor.delete(0, END)
+        e_programa_de_pos_graduacao.delete(0, END)
+        e_ano.delete(0, END)
+        e_orientador.delete(0, END)
+        e_co_orientador.delete(0, END)
+
+    app_ = Label(frameDireita, text="Inserir uma Nova Tese", width=100, compound=LEFT,
+                 padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
+    app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
+    l_linha = Label(frameDireita, width=200, height=1,
+                    anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
+    l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
+
+    l_titlo = Label(frameDireita, text="Título da Tese*",
+                    height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
+    l_titlo.grid(row=2, column=0, padx=5, pady=10, sticky=NSEW)
+    e_titlo = Entry(frameDireita, width=25, justify='left', relief="solid")
+    e_titlo.grid(row=2, column=1, pady=10, sticky=NSEW)
+
+    l_autor = Label(frameDireita, text="Autor da Tese*",
+                    height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
+    l_autor.grid(row=3, column=0, padx=5, pady=5, sticky=NSEW)
+    e_autor = Entry(frameDireita, width=25, justify='left', relief="solid")
+    e_autor.grid(row=3, column=1, pady=5, sticky=NSEW)
+
+    l_programa_de_pos_graduacao = Label(frameDireita, text="Programa de pós-graduação da Tese*",
+                                        height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
+    l_programa_de_pos_graduacao.grid(
+        row=4, column=0, padx=5, pady=5, sticky=NSEW)
+    e_programa_de_pos_graduacao = Entry(
+        frameDireita, width=25, justify='left', relief="solid")
+    e_programa_de_pos_graduacao.grid(row=4, column=1, pady=5, sticky=NSEW)
+
+    l_ano = Label(frameDireita, text="Ano de publicação da Tese*",
+                  height=1, anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
+    l_ano.grid(row=5, column=0, padx=5, pady=5, sticky=NSEW)
+    e_ano = Entry(frameDireita, width=25, justify='left', relief="solid")
+    e_ano.grid(row=5, column=1, pady=5, sticky=NSEW)
+
+    l_orientador = Label(frameDireita, text="Orientador da Tese*", height=1,
+                         anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
+    l_orientador.grid(row=6, column=0, padx=5, pady=5, sticky=NSEW)
+    e_orientador = Entry(frameDireita, width=25,
+                         justify='left', relief="solid")
+    e_orientador.grid(row=6, column=1, pady=5, sticky=NSEW)
+
+    l_co_orientador = Label(frameDireita, text="Co-orientador da Tese*", height=1,
+                            anchor=NW, font=(' Ivy 10 '), bg=co1, fg=co4)
+    l_co_orientador.grid(row=7, column=0, padx=5, pady=5, sticky=NSEW)
+    e_co_orientador = Entry(frameDireita, width=25,
+                            justify='left', relief="solid")
+    e_co_orientador.grid(row=7, column=1, pady=5, sticky=NSEW)
+
+    # Botao Salvar--------------------
+    img_salvar = Image.open(
+        'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/save.png')
+    img_salvar = img_salvar.resize((36, 36))
+    img_salvar = ImageTk.PhotoImage(img_salvar)
+    b_salvar = Button(frameDireita, command=add, image=img_salvar, compound=LEFT,
+                      width=100, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
     b_salvar.grid(row=8, column=1, pady=5, sticky=NSEW)
 
 
@@ -336,14 +441,15 @@ def ver_usuarios():
     app_ = Label(frameDireita, text="Todos Usuarios", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
-    l_linha = Label(frameDireita, width=400, height=1,
+    l_linha = Label(frameDireita, width=100, height=1,
                     anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
     dados = get_users()
 
     # creating a treeview with dual scrollbars
-    list_header = ['ID', 'Nome', 'Filiacao', 'Endereço', 'Email', 'Telefone']
+    list_header = ['ID', 'Nome', 'Filiação', 'Endereço',
+                   'Email', 'Telefone', 'Tipo de Usuário']
 
     global tree
 
@@ -362,8 +468,8 @@ def ver_usuarios():
     hsb.grid(column=0, row=3, sticky='ew')
     frameDireita.grid_rowconfigure(0, weight=12)
 
-    hd = ["nw", "nw", "nw", "nw", "nw", "nw"]
-    h = [40, 195, 180, 180, 90, 100, 100]
+    hd = ["nw", "nw", "nw", "nw", "nw", "nw", "nw"]
+    h = [3, 150, 130, 70, 120, 100, 100, 35]
     n = 0
 
     for col in list_header:
@@ -374,16 +480,28 @@ def ver_usuarios():
         n += 1
 
     for item in dados:
-        tree.insert('', 'end', values=item)
+        # Adicionando o tipo de usuário na exibição
+        user_type = item[6]  # Índice 6 corresponde ao tipo de usuário
+        if user_type == 1:
+            user_type_str = "Aluno de graduação"
+        elif user_type == 2:
+            user_type_str = "Aluno de pós-graduação"
+        elif user_type == 3:
+            user_type_str = "Professor"
+        else:
+            user_type_str = "Tipo não especificado"
 
+        tree.insert('', 'end', values=item + (user_type_str,))
 
 # funcao ver livros
+
+
 def ver_livros():
 
     app_ = Label(frameDireita, text="Todos os livros", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
-    l_linha = Label(frameDireita, width=400, height=1,
+    l_linha = Label(frameDireita, width=200, height=1,
                     anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
@@ -410,7 +528,7 @@ def ver_livros():
     frameDireita.grid_rowconfigure(0, weight=12)
 
     hd = ["nw", "nw", "nw", "nw", "nw", "nw"]
-    h = [40, 195, 180, 180, 90, 100, 100]
+    h = [3, 195, 180, 75, 35, 75]
     n = 0
 
     for col in list_header:
@@ -430,7 +548,7 @@ def ver_revistas():
     app_ = Label(frameDireita, text="Todas as Revistas", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
-    l_linha = Label(frameDireita, width=400, height=1,
+    l_linha = Label(frameDireita, width=200, height=1,
                     anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
@@ -457,7 +575,7 @@ def ver_revistas():
     frameDireita.grid_rowconfigure(0, weight=12)
 
     hd = ["nw", "nw", "nw", "nw", "nw", "nw"]
-    h = [40, 170, 130, 130, 70, 80, 80]
+    h = [3, 130, 110, 100, 40, 55, 10]
 
     for n, col in enumerate(list_header):
         tree.heading(col, text=col, anchor='nw')
@@ -467,6 +585,53 @@ def ver_revistas():
 
     for item in dados:
         tree.insert('', 'end', values=item)
+
+# funcao ver teses
+
+
+def ver_teses():
+    app_ = Label(frameDireita, text="Todas as Teses", width=100, compound=LEFT,
+                 padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
+    app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
+    l_linha = Label(frameDireita, width=400, height=1,
+                    anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
+    l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
+
+    dados = get_thesis()
+
+    # creating a treeview with dual scrollbars
+    list_header = ['ID', 'Título', 'Autor',
+                   'Programa de Pos Graduacao', 'Ano', 'Orientador', "Co-orientador"]
+
+    global tree
+
+    tree = ttk.Treeview(frameDireita, selectmode="extended",
+                        columns=list_header, show="headings")
+    # vertical scrollbar
+    vsb = ttk.Scrollbar(frameDireita, orient="vertical", command=tree.yview)
+
+    # horizontal scrollbar
+    hsb = ttk.Scrollbar(frameDireita, orient="horizontal", command=tree.xview)
+
+    tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+    tree.grid(column=0, row=2, sticky='nsew')
+    vsb.grid(column=1, row=2, sticky='ns')
+    hsb.grid(column=0, row=3, sticky='ew')
+    frameDireita.grid_rowconfigure(0, weight=12)
+
+    hd = ["nw", "nw", "nw", "nw", "nw", "nw"]
+    h = [3, 120, 110, 110, 40, 75, 75]
+
+    for n, col in enumerate(list_header):
+        tree.heading(col, text=col, anchor='nw')
+        # adjust the column's width to the header string
+        if n < len(h) and n < len(hd):  # Verifica se n não ultrapassa o comprimento de h e hd
+            tree.column(col, width=h[n], anchor=hd[n])
+
+    for item in dados:
+        tree.insert('', 'end', values=item)
+
 
 # Realizar um empréstimo
 
@@ -479,27 +644,43 @@ def realizar_emprestimo():
         user_id = e_id_usuario.get()
         book_id = e_id_livro.get()
         magazine_id = e_id_revista.get()
+        thesis_id = e_id_tese.get()
+        data_emprestimo = e_data_emprestimo.get()
 
-        if user_id and ((book_id and not magazine_id) or
-                        (magazine_id and not book_id) or
-                        (book_id and magazine_id)):
-            # Verificando se algum campo está vazio
-            # ou se todos estão preenchidos corretamente
-            if not book_id:  # Se o ID do livro estiver em branco, é um empréstimo apenas de revista
-                insert_loan(None, magazine_id, user_id, None, None)
-            elif not magazine_id:  # Se o ID da revista estiver em branco, é um empréstimo apenas de livro
-                insert_loan(book_id, None, user_id, None, None)
-            else:  # Se ambos os IDs estiverem preenchidos, é um empréstimo de livro e revista
-                insert_loan(book_id, magazine_id, user_id, None, None)
+        # Verifique se todos os campos estão preenchidos
+        if user_id and data_emprestimo:
+            try:
+                # Converta a data do empréstimo para o formato adequado
+                data_emprestimo = dt.datetime.strptime(
+                    data_emprestimo, "%Y-%m-%d").date()
+            except ValueError:
+                messagebox.showerror(
+                    'Erro', 'Formato de data inválido. Use o formato AAAA-MM-DD')
+                return
 
-            messagebox.showinfo('Sucesso', 'Empréstimo realizado com sucesso!')
-            # limpando os campos de entradas
-            e_id_usuario.delete(0, 'end')
-            e_id_livro.delete(0, 'end')
-            e_id_revista.delete(0, 'end')
+            # Obter o tipo de usuário correspondente ao ID do usuário
+            user_type = get_user_type(user_id)
+            if user_type:
+                # Faça a chamada adequada para a função insert_loan com a data de empréstimo
+                try:
+                    insert_loan(book_id, magazine_id, thesis_id,
+                                user_id, data_emprestimo.isoformat())
+                    messagebox.showinfo(
+                        'Sucesso', 'Empréstimo realizado com sucesso!')
+                    # Limpe os campos de entrada
+                    e_id_usuario.delete(0, 'end')
+                    e_id_livro.delete(0, 'end')
+                    e_id_revista.delete(0, 'end')
+                    e_id_tese.delete(0, 'end')
+                    e_data_emprestimo.delete(0, 'end')
+                except ValueError as e:
+                    messagebox.showerror('Erro', str(e))
+            else:
+                messagebox.showerror(
+                    'Erro', 'ID de usuário inválido ou não encontrado.')
         else:
             messagebox.showerror(
-                'Erro', 'Preencha todos os campos corretamente')
+                'Erro', 'Preencha todos os campos corretamente.')
 
     app_ = Label(frameDireita, text="Realizar empréstimo", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
@@ -528,6 +709,20 @@ def realizar_emprestimo():
                          justify='left', relief="solid")
     e_id_revista.grid(row=4, column=1, pady=5, sticky=NSEW)
 
+    l_id_tese = Label(frameDireita, text="ID da Tese",
+                      height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
+    l_id_tese.grid(row=5, column=0, padx=5, pady=5, sticky=NSEW)
+    e_id_tese = Entry(frameDireita, width=50,
+                      justify='left', relief="solid")
+    e_id_tese.grid(row=5, column=1, pady=5, sticky=NSEW)
+
+    l_data_emprestimo = Label(frameDireita, text="Data do empréstimo*",
+                              height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
+    l_data_emprestimo.grid(row=6, column=0, padx=5, pady=5, sticky=NSEW)
+    e_data_emprestimo = Entry(frameDireita, width=50,
+                              justify='left', relief="solid")
+    e_data_emprestimo.grid(row=6, column=1, pady=5, sticky=NSEW)
+
     # Botao Salvar--------------------
     img_salvar = Image.open(
         'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/save.png')
@@ -535,119 +730,113 @@ def realizar_emprestimo():
     img_salvar = ImageTk.PhotoImage(img_salvar)
     b_salvar = Button(frameDireita, command=add, image=img_salvar, compound=LEFT,
                       width=200, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
-    b_salvar.grid(row=5, column=1, pady=5, sticky=NSEW)
+    b_salvar.grid(row=7, column=1, pady=5, sticky=NSEW)
+
 # livros emprestados no momento
 
 
 def ver_livros_emprestados():
-
+    # Cabeçalho
     app_ = Label(frameDireita, text="Todos os livros emprestados no momento", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
-    l_linha = Label(frameDireita, width=400, height=1,
+
+    # Linha
+    l_linha = Label(frameDireita, width=200, height=1,
                     anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
+    # Obter dados dos livros emprestados
     dados = []
-
     books_on_loan = get_books_on_loan()
-
+    # Adiciona esta linha para imprimir os dados obtidos
+  
     for book in books_on_loan:
+        # Cada item de dado é uma lista contendo os detalhes de um livro emprestado
         dado = [f"{book[0]}", f"{book[1]}", f"{book[2]} {
             book[3]}", f"{book[4]}", f"{book[5]}"]
         dados.append(dado)
 
-    # creating a treeview with dual scrollbars
-    list_header = ['ID', 'Titlo', 'Nome do usuário',
-                   'D.mpréstimo', 'D.devolução']
+    # Cabeçalhos da lista
+    list_header = ['ID', 'Título', 'Nome do usuário',
+                   'Data de empréstimo', 'Data de devolução']
 
-    global tree
-
-    tree = ttk.Treeview(frameDireita, selectmode="extended",
-                        columns=list_header, show="headings")
-    # vertical scrollbar
-    vsb = ttk.Scrollbar(frameDireita, orient="vertical", command=tree.yview)
-
-    # horizontal scrollbar
-    hsb = ttk.Scrollbar(frameDireita, orient="horizontal", command=tree.xview)
-
-    tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-
-    tree.grid(column=0, row=2, sticky='nsew')
-    vsb.grid(column=1, row=2, sticky='ns')
-    hsb.grid(column=0, row=3, sticky='ew')
-    frameDireita.grid_rowconfigure(0, weight=12)
-
-    hd = ["nw", "nw", "ne", "ne", "ne", "ne"]
-    h = [60, 225, 200, 190, 110, 120, 105]
-    n = 0
-
-    for col in list_header:
-        tree.heading(col, text=col, anchor='nw')
-        # adjust the column's width to the header string
-        tree.column(col, width=h[n], anchor=hd[n])
-
-        n += 1
-
-    for item in dados:
-        tree.insert('', 'end', values=item)
-
-# ver revistas emprestadas
+    create_treeview(dados, list_header)
 
 
+# Revistas emprestadas no momento
 def ver_revistas_emprestados():
-
+    # Cabeçalho
     app_ = Label(frameDireita, text="Todas as revistas emprestadas no momento", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
+
+    # Linha
     l_linha = Label(frameDireita, width=400, height=1,
                     anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
-    dados = []
+    # Obter dados das revistas emprestadas
+    dados = get_magazine_on_loan()
 
-    magazine_on_loan = get_magazine_on_loan()
+    # Cabeçalhos da lista
+    list_header = ['ID', 'Título', 'Nome do usuário',
+                   'Data de empréstimo', 'Data de devolução']
 
-    for magazine in magazine_on_loan:
-        dado = [f"{magazine[0]}", f"{magazine[1]}", f"{magazine[2]} {
-            magazine[3]}", f"{magazine[4]}", f"{magazine[5]}"]
-        dados.append(dado)
+    # Criar Treeview com scrollbars
+    create_treeview(dados, list_header)
 
-    # creating a treeview with dual scrollbars
-    list_header = ['ID', 'Titlo', 'Nome do usuário',
-                   'D.mpréstimo', 'D.devolução']
 
+# Teses emprestadas no momento
+def ver_teses_emprestados():
+    # Cabeçalho
+    app_ = Label(frameDireita, text="Todas as teses emprestadas no momento", width=100, compound=LEFT,
+                 padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
+    app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
+
+    # Linha
+    l_linha = Label(frameDireita, width=400, height=1,
+                    anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
+    l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
+
+    # Obter dados das teses emprestadas
+    dados = get_thesis_on_loan()
+
+    # Cabeçalhos da lista
+    list_header = ['ID', 'Título', 'Nome do usuário',
+                   'Data de empréstimo', 'Data de devolução']
+
+    # Criar Treeview com scrollbars
+    create_treeview(dados, list_header)
+
+
+def create_treeview(dados, list_header):
+    # Criar Treeview com scrollbars
     global tree
-
     tree = ttk.Treeview(frameDireita, selectmode="extended",
                         columns=list_header, show="headings")
-    # vertical scrollbar
     vsb = ttk.Scrollbar(frameDireita, orient="vertical", command=tree.yview)
-
-    # horizontal scrollbar
     hsb = ttk.Scrollbar(frameDireita, orient="horizontal", command=tree.xview)
-
     tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-
     tree.grid(column=0, row=2, sticky='nsew')
     vsb.grid(column=1, row=2, sticky='ns')
     hsb.grid(column=0, row=3, sticky='ew')
     frameDireita.grid_rowconfigure(0, weight=12)
 
-    hd = ["nw", "nw", "ne", "ne", "ne", "ne"]
-    h = [20, 175, 120, 90, 90, 100, 100]
-    n = 0
+    # Larguras das colunas e alinhamentos
+    # 5 elementos, correspondendo aos 5 cabeçalhos
+    hd = ["nw", "nw", "ne", "ne", "ne"]
+    # 5 elementos, correspondendo às larguras das colunas
+    h = [20, 175, 120, 90, 90]
 
-    for col in list_header:
+    # Configurar cabeçalhos e larguras das colunas
+    for col, width, anchor in zip(list_header, h, hd):
         tree.heading(col, text=col, anchor='nw')
-        # adjust the column's width to the header string
-        tree.column(col, width=h[n], anchor=hd[n])
+        tree.column(col, width=width, anchor=anchor)
 
-        n += 1
-
+    # Inserir dados na treeview
     for item in dados:
         tree.insert('', 'end', values=item)
-
 
 # Devolução de um empréstimo
 
@@ -734,6 +923,12 @@ def control(i):
             widget.destroy()
         nova_revista()
 
+     # nova teses
+    if i == 'nova_tese':
+        for widget in frameDireita.winfo_children():
+            widget.destroy()
+        nova_tese()
+
     # Ver livros
     if i == 'ver_livros':
         for widget in frameDireita.winfo_children():
@@ -745,6 +940,12 @@ def control(i):
         for widget in frameDireita.winfo_children():
             widget.destroy()
         ver_revistas()
+
+    # Ver teses
+    if i == 'ver_teses':
+        for widget in frameDireita.winfo_children():
+            widget.destroy()
+        ver_teses()
 
     # Ver usuarios
     if i == 'ver_usuarios':
@@ -769,6 +970,12 @@ def control(i):
         for widget in frameDireita.winfo_children():
             widget.destroy()
         ver_revistas_emprestados()
+
+    # Teses emprestadas no momento
+    if i == 'ver_teses_emprestadas':
+        for widget in frameDireita.winfo_children():
+            widget.destroy()
+        ver_teses_emprestados()
 
     # Devolução de um empréstimo
     if i == 'devolucao_emprestimo':
@@ -795,7 +1002,7 @@ img_novo_livro = img_novo_livro.resize((36, 36))
 img_novo_livro = ImageTk.PhotoImage(img_novo_livro)
 b_novo_livro = Button(frameEsquerda, command=lambda: control('novo_livro'), image=img_novo_livro, compound=LEFT,
                       anchor=NW, text='  Novo livro', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
-b_novo_livro.grid(row=1, column=0, sticky=NSEW, padx=5, pady=6)
+b_novo_livro.grid(row=0, column=1, sticky=NSEW, padx=5, pady=6)
 
 img_ver_livros = Image.open(
     'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/logo.png')
@@ -820,7 +1027,25 @@ img_ver_revistas = img_ver_revistas.resize((36, 36))
 img_ver_revistas = ImageTk.PhotoImage(img_ver_revistas)
 b_ver_revistas = Button(frameEsquerda, command=lambda: control('ver_revistas'), image=img_ver_revistas, compound=LEFT,
                         anchor=NW, text=' Exibir todos as revistas', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
-b_ver_revistas.grid(row=4, column=0, sticky=NSEW, padx=5, pady=6)
+b_ver_revistas.grid(row=3, column=1, sticky=NSEW, padx=5, pady=6)
+
+# Nova tese
+img_nova_tese = Image.open(
+    'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/add.png')
+img_nova_tese = img_nova_tese.resize((36, 36))
+img_nova_tese = ImageTk.PhotoImage(img_nova_tese)
+b_nova_tese = Button(frameEsquerda, command=lambda: control('nova_tese'), image=img_nova_tese, compound=LEFT,
+                     anchor=NW, text='  Nova tese', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
+b_nova_tese.grid(row=2, column=1, sticky=NSEW, padx=5, pady=6)
+
+img_ver_teses = Image.open(
+    'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/logo.png')
+img_ver_teses = img_ver_teses.resize((36, 36))
+img_ver_teses = ImageTk.PhotoImage(img_ver_teses)
+b_ver_teses = Button(frameEsquerda, command=lambda: control('ver_teses'), image=img_ver_teses, compound=LEFT,
+                     anchor=NW, text=' Exibir todas as teses', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
+b_ver_teses.grid(row=4, column=0, sticky=NSEW, padx=5, pady=6)
+
 
 # Ver usuário
 img_ver_usuario = Image.open(
@@ -829,7 +1054,7 @@ img_ver_usuario = img_ver_usuario.resize((36, 36))
 img_ver_usuario = ImageTk.PhotoImage(img_ver_usuario)
 b_ver_usuario = Button(frameEsquerda, command=lambda: control('ver_usuarios'), image=img_ver_usuario, compound=LEFT,
                        anchor=NW, text='  Exibir todos os usuarios', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
-b_ver_usuario.grid(row=5, column=0, sticky=NSEW, padx=5, pady=6)
+b_ver_usuario.grid(row=4, column=1, sticky=NSEW, padx=5, pady=6)
 
 # Realizar um empréstimo
 img_emprestimo = Image.open(
@@ -838,7 +1063,7 @@ img_emprestimo = img_emprestimo.resize((36, 36))
 img_emprestimo = ImageTk.PhotoImage(img_emprestimo)
 b_emprestimo = Button(frameEsquerda, command=lambda: control('realizar_emprestimo'), image=img_emprestimo, compound=LEFT,
                       anchor=NW, text=' Realizar um empréstimo', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
-b_emprestimo.grid(row=6, column=0, sticky=NSEW, padx=5, pady=6)
+b_emprestimo.grid(row=5, column=0, sticky=NSEW, padx=5, pady=6)
 
 # Devolução de um empréstimo
 img_devolucao = Image.open(
@@ -847,7 +1072,7 @@ img_devolucao = img_devolucao.resize((36, 36))
 img_devolucao = ImageTk.PhotoImage(img_devolucao)
 b_devolucao = Button(frameEsquerda, command=lambda: control('devolucao_emprestimo'), image=img_devolucao, compound=LEFT,
                      anchor=NW, text='  Devolução de um empréstimo', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
-b_devolucao.grid(row=7, column=0, sticky=NSEW, padx=5, pady=6)
+b_devolucao.grid(row=5, column=1, sticky=NSEW, padx=5, pady=6)
 
 # Livros emprestados no momento
 img_livros_emprestados = Image.open(
@@ -856,7 +1081,7 @@ img_livros_emprestados = img_livros_emprestados.resize((36, 36))
 img_livros_emprestados = ImageTk.PhotoImage(img_livros_emprestados)
 b_livros_emprestados = Button(frameEsquerda, command=lambda: control('ver_livros_emprestados'), image=img_livros_emprestados,
                               compound=LEFT, anchor=NW, text=' Livros emprestados no momento', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
-b_livros_emprestados.grid(row=8, column=0, sticky=NSEW, padx=5, pady=6)
+b_livros_emprestados.grid(row=6, column=0, sticky=NSEW, padx=5, pady=6)
 
 
 # Revistas emprestadas no momento
@@ -866,7 +1091,15 @@ img_revistas_emprestadas = img_revistas_emprestadas.resize((36, 36))
 img_revistas_emprestadas = ImageTk.PhotoImage(img_revistas_emprestadas)
 b_revistas_emprestadas = Button(frameEsquerda, command=lambda: control('ver_revistas_emprestadas'), image=img_revistas_emprestadas,
                                 compound=LEFT, anchor=NW, text=' Revistas emprestadas no momento', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
-b_revistas_emprestadas.grid(row=9, column=0, sticky=NSEW, padx=5, pady=6)
+b_revistas_emprestadas.grid(row=6, column=1, sticky=NSEW, padx=5, pady=6)
 
+# teses emprestadas no momento
+img_teses_emprestadas = Image.open(
+    'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/livro2.png')
+img_teses_emprestadas = img_teses_emprestadas.resize((36, 36))
+img_teses_emprestadas = ImageTk.PhotoImage(img_teses_emprestadas)
+b_teses_emprestadas = Button(frameEsquerda, command=lambda: control('ver_teses_emprestadas'), image=img_teses_emprestadas,
+                             compound=LEFT, anchor=NW, text=' teses emprestadas no momento', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
+b_teses_emprestadas.grid(row=7, column=0, sticky=NSEW, padx=5, pady=6)
 
 janela.mainloop()
