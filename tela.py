@@ -1,3 +1,8 @@
+# tela.py part 1
+from datetime import datetime
+from PIL import ImageTk
+from tkcalendar import Calendar
+from tkinter import ttk, messagebox
 from tkinter.ttk import *
 from tkinter import *
 from tkinter import Tk, ttk
@@ -6,7 +11,7 @@ from tkinter import messagebox
 
 from PIL import Image, ImageTk
 
-# tkcalendar
+# tkcalendarx
 from tkcalendar import Calendar, DateEntry
 from datetime import date
 import datetime as dt  # Usando um alias para evitar conflitos de nomes
@@ -496,8 +501,8 @@ def ver_usuarios():
 # funcao ver livros
 
 
+# Função para exibir todos os livros
 def ver_livros():
-
     app_ = Label(frameDireita, text="Todos os livros", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
@@ -507,17 +512,18 @@ def ver_livros():
 
     dados = get_books()
 
-    # creating a treeview with dual scrollbars
-    list_header = ['ID', 'Título', 'Autor', 'Editora', 'Ano', 'ISBN']
+    # Criando um treeview com rolagem dupla
+    list_header = ['ID', 'Título', 'Autor',
+                   'Editora', 'Ano', 'ISBN', 'Disponibilidade']
 
     global tree
 
     tree = ttk.Treeview(frameDireita, selectmode="extended",
                         columns=list_header, show="headings")
-    # vertical scrollbar
+    # Barra de rolagem vertical
     vsb = ttk.Scrollbar(frameDireita, orient="vertical", command=tree.yview)
 
-    # horizontal scrollbar
+    # Barra de rolagem horizontal
     hsb = ttk.Scrollbar(frameDireita, orient="horizontal", command=tree.xview)
 
     tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
@@ -527,23 +533,23 @@ def ver_livros():
     hsb.grid(column=0, row=3, sticky='ew')
     frameDireita.grid_rowconfigure(0, weight=12)
 
-    hd = ["nw", "nw", "nw", "nw", "nw", "nw"]
-    h = [3, 195, 180, 75, 35, 75]
-    n = 0
+    hd = ["nw", "nw", "nw", "nw", "nw", "nw", "nw"]
+    h = [3, 195, 180, 75, 35, 75, 110]
 
-    for col in list_header:
+    for n, col in enumerate(list_header):
         tree.heading(col, text=col, anchor='nw')
-        # adjust the column's width to the header string
-        tree.column(col, width=h[n], anchor=hd[n])
-
-        n += 1
+        # Ajustando a largura da coluna para a string do cabeçalho
+        if n < len(h) and n < len(hd):
+            tree.column(col, width=h[n], anchor=hd[n])
 
     for item in dados:
-        tree.insert('', 'end', values=item)
+        disponibilidade = "Disponível" if item[-1] == 1 else "Alugado"
+        # Convertendo item para lista antes da concatenação
+        item_list = list(item)
+        tree.insert('', 'end', values=item_list + [disponibilidade])
+
 
 # funcao ver revistas
-
-
 def ver_revistas():
     app_ = Label(frameDireita, text="Todas as Revistas", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
@@ -555,7 +561,8 @@ def ver_revistas():
     dados = get_magazine()
 
     # creating a treeview with dual scrollbars
-    list_header = ['ID', 'Título', 'Autor', 'Editora', 'Ano', 'ISSN', "Volume"]
+    list_header = ['ID', 'Título', 'Autor', 'Editora',
+                   'Ano', 'ISSN', 'Volume', 'Disponibilidade']
 
     global tree
 
@@ -574,8 +581,8 @@ def ver_revistas():
     hsb.grid(column=0, row=3, sticky='ew')
     frameDireita.grid_rowconfigure(0, weight=12)
 
-    hd = ["nw", "nw", "nw", "nw", "nw", "nw"]
-    h = [3, 130, 110, 100, 40, 55, 10]
+    hd = ["nw", "nw", "nw", "nw", "nw", "nw", "nw"]
+    h = [3, 130, 110, 100, 40, 55, 10, 110]
 
     for n, col in enumerate(list_header):
         tree.heading(col, text=col, anchor='nw')
@@ -584,16 +591,18 @@ def ver_revistas():
             tree.column(col, width=h[n], anchor=hd[n])
 
     for item in dados:
-        tree.insert('', 'end', values=item)
+        disponibilidade = "Disponível" if item[-1] == 1 else "Alugado"
+        # Convertendo item e [disponibilidade] em tuplas antes de concatená-las
+        tree.insert('', 'end', values=tuple(item) + (disponibilidade,))
 
-# funcao ver teses
+# Função para ver teses
 
 
 def ver_teses():
     app_ = Label(frameDireita, text="Todas as Teses", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
-    l_linha = Label(frameDireita, width=400, height=1,
+    l_linha = Label(frameDireita, width=200, height=1,
                     anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
@@ -601,7 +610,7 @@ def ver_teses():
 
     # creating a treeview with dual scrollbars
     list_header = ['ID', 'Título', 'Autor',
-                   'Programa de Pos Graduacao', 'Ano', 'Orientador', "Co-orientador"]
+                   'Programa de Pos Graduacao', 'Ano', 'Orientador', 'Co-orientador', 'Disponibilidade']
 
     global tree
 
@@ -620,18 +629,19 @@ def ver_teses():
     hsb.grid(column=0, row=3, sticky='ew')
     frameDireita.grid_rowconfigure(0, weight=12)
 
-    hd = ["nw", "nw", "nw", "nw", "nw", "nw"]
-    h = [3, 120, 110, 110, 40, 75, 75]
+    hd = ["nw", "nw", "nw", "nw", "nw", "nw", "nw", "nw"]
+    h = [3, 120, 110, 110, 40, 75, 75, 110]
 
     for n, col in enumerate(list_header):
         tree.heading(col, text=col, anchor='nw')
         # adjust the column's width to the header string
-        if n < len(h) and n < len(hd):  # Verifica se n não ultrapassa o comprimento de h e hd
+        if n < len(h) and n < len(hd):
             tree.column(col, width=h[n], anchor=hd[n])
 
     for item in dados:
-        tree.insert('', 'end', values=item)
-
+        disponibilidade = "Disponível" if item[-1] == 1 else "Alugado"
+        # Convertendo item em uma tupla antes de concatená-lo com [disponibilidade]
+        tree.insert('', 'end', values=tuple(item) + (disponibilidade,))
 
 # Realizar um empréstimo
 
@@ -663,8 +673,38 @@ def realizar_emprestimo():
             if user_type:
                 # Faça a chamada adequada para a função insert_loan com a data de empréstimo
                 try:
-                    insert_loan(book_id, magazine_id, thesis_id,
-                                user_id, data_emprestimo.isoformat())
+                    # Empréstimo de apenas um livro
+                    if book_id and not magazine_id and not thesis_id:
+                        insert_loan(book_id, None, None, user_id,
+                                    data_emprestimo.isoformat())
+                    # Empréstimo de apenas uma revista
+                    elif magazine_id and not book_id and not thesis_id:
+                        insert_loan(None, magazine_id, None,
+                                    user_id, data_emprestimo.isoformat())
+                    # Empréstimo de apenas uma tese
+                    elif thesis_id and not book_id and not magazine_id:
+                        insert_loan(None, None, thesis_id, user_id,
+                                    data_emprestimo.isoformat())
+                    # Empréstimo de um livro e uma revista
+                    elif book_id and magazine_id and not thesis_id:
+                        insert_loan(book_id, magazine_id, None,
+                                    user_id, data_emprestimo.isoformat())
+                    # Empréstimo de um livro e uma tese
+                    elif book_id and thesis_id and not magazine_id:
+                        insert_loan(book_id, None, thesis_id,
+                                    user_id, data_emprestimo.isoformat())
+                    # Empréstimo de uma revista e uma tese
+                    elif magazine_id and thesis_id and not book_id:
+                        insert_loan(None, magazine_id, thesis_id,
+                                    user_id, data_emprestimo.isoformat())
+                    # Empréstimo de um livro, uma revista e uma tese
+                    elif book_id and magazine_id and thesis_id:
+                        insert_loan(book_id, magazine_id, thesis_id,
+                                    user_id, data_emprestimo.isoformat())
+                    else:
+                        raise ValueError(
+                            "Combinação de itens inválida para empréstimo.")
+
                     messagebox.showinfo(
                         'Sucesso', 'Empréstimo realizado com sucesso!')
                     # Limpe os campos de entrada
@@ -681,7 +721,6 @@ def realizar_emprestimo():
         else:
             messagebox.showerror(
                 'Erro', 'Preencha todos os campos corretamente.')
-
     app_ = Label(frameDireita, text="Realizar empréstimo", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
@@ -732,9 +771,9 @@ def realizar_emprestimo():
                       width=200, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
     b_salvar.grid(row=7, column=1, pady=5, sticky=NSEW)
 
+
+# tela.py part 2
 # livros emprestados no momento
-
-
 def ver_livros_emprestados():
     # Cabeçalho
     app_ = Label(frameDireita, text="Todos os livros emprestados no momento", width=100, compound=LEFT,
@@ -747,18 +786,10 @@ def ver_livros_emprestados():
     l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
     # Obter dados dos livros emprestados
-    dados = []
-    books_on_loan = get_books_on_loan()
-    # Adiciona esta linha para imprimir os dados obtidos
-  
-    for book in books_on_loan:
-        # Cada item de dado é uma lista contendo os detalhes de um livro emprestado
-        dado = [f"{book[0]}", f"{book[1]}", f"{book[2]} {
-            book[3]}", f"{book[4]}", f"{book[5]}"]
-        dados.append(dado)
+    dados = get_books_on_loan()
 
     # Cabeçalhos da lista
-    list_header = ['ID', 'Título', 'Nome do usuário',
+    list_header = ['ID', 'Título', 'Tipo do usuário', 'Tipo de usuario',
                    'Data de empréstimo', 'Data de devolução']
 
     create_treeview(dados, list_header)
@@ -780,7 +811,7 @@ def ver_revistas_emprestados():
     dados = get_magazine_on_loan()
 
     # Cabeçalhos da lista
-    list_header = ['ID', 'Título', 'Nome do usuário',
+    list_header = ['ID', 'Título', 'Tipo do usuário', 'Tipo de usuario',
                    'Data de empréstimo', 'Data de devolução']
 
     # Criar Treeview com scrollbars
@@ -803,8 +834,32 @@ def ver_teses_emprestados():
     dados = get_thesis_on_loan()
 
     # Cabeçalhos da lista
-    list_header = ['ID', 'Título', 'Nome do usuário',
+    list_header = ['ID', 'Título', 'Tipo do usuário', 'Tipo de usuario',
                    'Data de empréstimo', 'Data de devolução']
+
+    # Criar Treeview com scrollbars
+    create_treeview(dados, list_header)
+
+# Atrasos no momento
+
+
+def ver_emprestimos_atrasados():
+    # Cabeçalho
+    app_ = Label(frameDireita, text="Empréstimos atrasados e multas", width=100, compound=LEFT,
+                 padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
+    app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
+
+    # Linha
+    l_linha = Label(frameDireita, width=400, height=1,
+                    anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
+    l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
+
+    # Obter dados dos empréstimos atrasados
+    dados = get_emprestimos_atrasados()
+
+    # Cabeçalhos da lista
+    list_header = ['ID Empréstimo', 'Título',
+                   'Tipo do Empréstimo', 'Dias de Atraso', 'Valor da Multa']
 
     # Criar Treeview com scrollbars
     create_treeview(dados, list_header)
@@ -825,9 +880,9 @@ def create_treeview(dados, list_header):
 
     # Larguras das colunas e alinhamentos
     # 5 elementos, correspondendo aos 5 cabeçalhos
-    hd = ["nw", "nw", "ne", "ne", "ne"]
+    hd = ["nw", "nw", "ne", "ne", "ne", "ne"]
     # 5 elementos, correspondendo às larguras das colunas
-    h = [20, 175, 120, 90, 90]
+    h = [20, 175, 120, 90, 90, 90]
 
     # Configurar cabeçalhos e larguras das colunas
     for col, width, anchor in zip(list_header, h, hd):
@@ -842,6 +897,102 @@ def create_treeview(dados, list_header):
 
 
 def devolucao_emprestimo():
+    global img_salvar
+
+    def add():
+        loan_id = e_id_emprestimo.get()
+        return_date = e_data_retorno.get()
+
+        # Verificar se o campo do ID do empréstimo e a data de retorno estão preenchidos
+        if loan_id == '' or return_date == '':
+            messagebox.showerror('Erro', 'Preencha todos os campos')
+            return
+
+        # Verificar se a data de retorno está no formato correto AAAA-MM-DD
+        try:
+            datetime.strptime(return_date, '%Y-%m-%d')
+        except ValueError:
+            messagebox.showerror(
+                'Erro', 'Formato de data inválido. Use o formato AAAA-MM-DD.')
+            return
+
+        # Verificar se o empréstimo existe
+        if not verificar_emprestimo_existe(loan_id):
+            messagebox.showerror('Erro', 'Empréstimo não encontrado.')
+            return
+
+        # Verificar se a data de retorno está dentro do intervalo permitido
+        data_emprestimo, data_devolucao = obter_datas_emprestimo(loan_id)
+        data_atual = datetime.strptime(return_date, '%Y-%m-%d').date()
+        if data_atual < data_emprestimo or data_atual > data_devolucao:
+            messagebox.showerror(
+                'Erro', 'Data atual fora do intervalo permitido.')
+            return
+
+        # Verificar se o usuário possui débitos
+        if verificar_debitos_usuario(loan_id):
+            messagebox.showerror(
+                'Erro', 'Você possui débitos. Não pode realizar a devolução.')
+            return
+
+        # Verificar se a data atual é posterior à data de devolução
+        if data_atual > data_devolucao:
+            messagebox.showerror(
+                'Erro', 'A data atual é posterior à data de devolução. Você possui débitos.')
+            return
+
+        # Perguntar ao usuário se deseja renovar o empréstimo
+        resposta = messagebox.askyesno(
+            'Renovar empréstimo', 'Deseja renovar o empréstimo?')
+        if resposta:
+            try:
+                renovar_emprestimo(loan_id, data_atual)
+                messagebox.showinfo(
+                    'Sucesso', 'Empréstimo renovado com sucesso.')
+            except Exception as e:
+                messagebox.showerror('Erro', str(e))
+        else:
+            realizar_devolucao_emprestimo(loan_id)
+            messagebox.showinfo('Sucesso', 'Empréstimo devolvido com sucesso.')
+
+        # Limpar os campos de entrada
+        e_id_emprestimo.delete(0, END)
+        e_data_retorno.delete(0, END)
+
+    app_ = Label(frameDireita, text="Atualizar data de devolucao do emprestimo", width=100, compound=LEFT,
+                 padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
+    app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
+    l_linha = Label(frameDireita, width=400, height=1,
+                    anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
+    l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
+
+    l_id_emprestimo = Label(frameDireita, text="ID do empréstimo*",
+                            height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
+    l_id_emprestimo.grid(row=2, column=0, padx=5, pady=10, sticky=NSEW)
+    e_id_emprestimo = Entry(frameDireita, width=30,
+                            justify='left', relief="solid")
+    e_id_emprestimo.grid(row=2, column=1, pady=10, sticky=NSEW)
+
+    l_data_retorno = Label(frameDireita, text="Dia atual (formato: AAAA-MM-DD)*",
+                           height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
+    l_data_retorno.grid(row=3, column=0, padx=5, pady=5, sticky=NSEW)
+    e_data_retorno = Entry(frameDireita, width=30,
+                           justify='left', relief="solid")
+    e_data_retorno.grid(row=3, column=1, pady=5, sticky=NSEW)
+
+    # Botao Salvar--------------------
+    img_salvar = Image.open(
+        'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/save.png')
+    img_salvar = img_salvar.resize((36, 36))
+    img_salvar = ImageTk.PhotoImage(img_salvar)
+    b_salvar = Button(frameDireita, command=add, image=img_salvar, compound=LEFT,
+                      width=200, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
+    b_salvar.grid(row=4, column=1, pady=5, sticky=NSEW)
+
+# Pagar multa de um emprestimo
+
+
+def pagar_multa():
 
     global img_salvar
 
@@ -869,7 +1020,7 @@ def devolucao_emprestimo():
         e_id_emprestimo.delete(0, END)
         e_data_retorno.delete(0, END)
 
-    app_ = Label(frameDireita, text="Atualizar data de devolucao do emprestimo", width=100, compound=LEFT,
+    app_ = Label(frameDireita, text="Pagar as multas atrasadas", width=100, compound=LEFT,
                  padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
     app_.grid(row=0, column=0, columnspan=3, sticky=NSEW)
     l_linha = Label(frameDireita, width=400, height=1,
@@ -883,7 +1034,7 @@ def devolucao_emprestimo():
                             justify='left', relief="solid")
     e_id_emprestimo.grid(row=2, column=1, pady=10, sticky=NSEW)
 
-    l_data_retorno = Label(frameDireita, text="Nova data de devolução (formato: AAAA-MM-DD)*",
+    l_data_retorno = Label(frameDireita, text="valor total da multa:*",
                            height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
     l_data_retorno.grid(row=3, column=0, padx=5, pady=5, sticky=NSEW)
     e_data_retorno = Entry(frameDireita, width=30,
@@ -899,10 +1050,11 @@ def devolucao_emprestimo():
                       width=200, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
     b_salvar.grid(row=4, column=1, pady=5, sticky=NSEW)
 
-
 # Frame Esquerda --------------------------------------------------
 
 # Funcao para controlar o Menu
+
+
 def control(i):
 
     # novo usuario
@@ -977,14 +1129,26 @@ def control(i):
             widget.destroy()
         ver_teses_emprestados()
 
+        # Atrasos  no momento
+    if i == 'ver_emprestimos_atrasados':
+        for widget in frameDireita.winfo_children():
+            widget.destroy()
+        ver_emprestimos_atrasados()
+
     # Devolução de um empréstimo
     if i == 'devolucao_emprestimo':
         for widget in frameDireita.winfo_children():
             widget.destroy()
         devolucao_emprestimo()
 
+    # pagar a multa de um empréstimo
+    if i == 'pagar_multa':
+        for widget in frameDireita.winfo_children():
+            widget.destroy()
+        pagar_multa()
 
 # Menu ------------------------------------------------------------
+
 
 # Novo usuario
 img_usuario = Image.open(
@@ -1074,6 +1238,15 @@ b_devolucao = Button(frameEsquerda, command=lambda: control('devolucao_emprestim
                      anchor=NW, text='  Devolução de um empréstimo', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
 b_devolucao.grid(row=5, column=1, sticky=NSEW, padx=5, pady=6)
 
+# Pagamento de multa
+img_pagar_multa = Image.open(
+    'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/update.png')
+img_pagar_multa = img_pagar_multa.resize((36, 36))
+img_pagar_multa = ImageTk.PhotoImage(img_pagar_multa)
+b_pagar_multa = Button(frameEsquerda, command=lambda: control('pagar_multa'), image=img_pagar_multa, compound=LEFT,
+                       anchor=NW, text='  Pagar a multa de um empréstimo', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
+b_pagar_multa.grid(row=8, column=0, sticky=NSEW, padx=5, pady=6)
+
 # Livros emprestados no momento
 img_livros_emprestados = Image.open(
     'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/livro2.png')
@@ -1101,5 +1274,14 @@ img_teses_emprestadas = ImageTk.PhotoImage(img_teses_emprestadas)
 b_teses_emprestadas = Button(frameEsquerda, command=lambda: control('ver_teses_emprestadas'), image=img_teses_emprestadas,
                              compound=LEFT, anchor=NW, text=' teses emprestadas no momento', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
 b_teses_emprestadas.grid(row=7, column=0, sticky=NSEW, padx=5, pady=6)
+
+# ver emprestimos atrasados
+img_emprestimos_atrasados = Image.open(
+    'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/livro2.png')
+img_emprestimos_atrasados = img_emprestimos_atrasados.resize((36, 36))
+img_emprestimos_atrasados = ImageTk.PhotoImage(img_emprestimos_atrasados)
+b_emprestimos_atrasados = Button(frameEsquerda, command=lambda: control('ver_emprestimos_atrasados'), image=img_emprestimos_atrasados,
+                                 compound=LEFT, anchor=NW, text=' Atrasos no momento', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
+b_emprestimos_atrasados.grid(row=7, column=1, sticky=NSEW, padx=5, pady=6)
 
 janela.mainloop()
