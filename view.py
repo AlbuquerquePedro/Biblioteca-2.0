@@ -1,3 +1,4 @@
+# view.py
 from datetime import timedelta
 import sqlite3
 from datetime import datetime, timedelta
@@ -9,6 +10,7 @@ import itertools
 def connect():
     conn = sqlite3.connect('biblioteca.db')
     return conn
+
 
 # Função para inserir um novo livro na tabela "livros" com status inicial de disponível
 
@@ -416,9 +418,8 @@ def calculate_devolution_date(data_atual, tipo_usuario):
         raise ValueError("Tipo de usuário inválido.")
     return data_atual + timedelta(days=prazo_emprestimo)
 
+
 # insert_book("One Piece", "Oda", "Nao sei", 5662, "5788598270692")
-
-
 '''# Exemplo de uso das funções
 insert_book("One Piece", "Oda", "Nao sei", 5662, "5788598270692")
 insert_user("João", "Silva", "Rua A, 123", "joao.silva@email.com", "(11) 1234-5678")
