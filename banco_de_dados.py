@@ -1,4 +1,3 @@
-#banco_de_dados.py
 import sqlite3
 
 
@@ -65,6 +64,25 @@ def create_tables():
                     FOREIGN KEY(id_revista) REFERENCES revistas(id),\
                     FOREIGN KEY(id_tese) REFERENCES teses(id),\
                     FOREIGN KEY(id_usuario) REFERENCES usuarios(id))')
+
+    # Criar uma tabela para os emprestimos atrasados
+    cursor.execute('CREATE TABLE IF NOT EXISTS emprestimos_atrasados (\
+                    id_emprestimo_atrasado INTEGER PRIMARY KEY,\
+                    id_emprestimo INTEGER,\
+                    titulo TEXT,\
+                    tipo_emprestimo TEXT,\
+                    tipo_usuario TEXT,\
+                    status_usuario TEXT,\
+                    dias_atraso INTEGER,\
+                    valor_multa REAL,\
+                    FOREIGN KEY(id_emprestimo) REFERENCES emprestimos(id))')
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS historico_pagamentos (
+                        id_pagamento INTEGER PRIMARY KEY,
+                        id_emprestimo INTEGER,
+                        data_pagamento TEXT,
+                        valor_pago REAL
+                      )''')
 
     # Fechar a conexao com o banco de dados
     conn.commit()

@@ -4,6 +4,8 @@ import sqlite3
 from datetime import datetime, timedelta
 from tkinter import messagebox
 import itertools
+
+
 # Função para conectar ao banco de dados
 
 
@@ -11,6 +13,25 @@ def connect():
     conn = sqlite3.connect('biblioteca.db')
     return conn
 
+
+def clear_overdue_loans():
+    try:
+        # Conectar ao banco de dados
+        conn = sqlite3.connect('biblioteca.db')
+        cursor = conn.cursor()
+
+        # Excluir todos os registros da tabela emprestimos_atrasados
+        cursor.execute('DELETE FROM emprestimos_atrasados')
+
+        # Commit (confirmar) as alterações no banco de dados
+        conn.commit()
+
+        # Fechar a conexão com o banco de dados
+        conn.close()
+
+        print("Dados da tabela emprestimos_atrasados foram apagados com sucesso.")
+    except sqlite3.Error as e:
+        print("Ocorreu um erro ao limpar os dados da tabela emprestimos_atrasados:", e)
 
 # Função para inserir um novo livro na tabela "livros" com status inicial de disponível
 
@@ -98,9 +119,6 @@ def get_users():
 
 
 def get_user_type(user_id):
-    # Função para obter o tipo de usuário a partir do ID do usuário
-    # Você precisa implementar essa função para consultar o banco de dados e retornar o tipo de usuário correspondente ao ID fornecido
-    # Aqui está um exemplo de como fazer isso:
     conn = connect()
     cursor = conn.cursor()
     cursor.execute(
@@ -118,6 +136,33 @@ def generate_loan_id(cursor):
     cursor.execute("SELECT MAX(id) FROM emprestimos")
     last_id = cursor.fetchone()[0]
     return last_id + 1 if last_id is not None else 1
+
+
+def get_item_status(table_name, item_id):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+
+    try:
+        if table_name == "livros":
+            cursor.execute(
+                "SELECT status FROM livros WHERE id=?", (item_id,))
+        elif table_name == "revistas":
+            cursor.execute(
+                "SELECT status FROM revistas WHERE id=?", (item_id,))
+        elif table_name == "teses":
+            cursor.execute(
+                "SELECT status FROM teses WHERE id=?", (item_id,))
+        else:
+            raise ValueError("Tabela de item inválida.")
+
+        status = cursor.fetchone()[0]  # Obter o status do item
+        return status
+    except Exception as e:
+        raise e
+    finally:
+        cursor.close()
+        conn.close()
+
 
 # Função para inserir um empréstimo no banco de dados
 
@@ -143,10 +188,23 @@ def insert_loan(id_livro, id_revista, id_tese, id_usuario, data_emprestimo):
         # Verificar se é um empréstimo de livro, revista e/ou tese
         if id_livro:
             is_book = True
+            # Verificar status do livro
+            livro_status = get_item_status("livros", id_livro)
+            if livro_status != "disponível":
+                raise ValueError("Livro não está disponível para empréstimo.")
         if id_revista:
             is_magazine = True
+            # Verificar status da revista
+            revista_status = get_item_status("revistas", id_revista)
+            if revista_status != "disponível":
+                raise ValueError(
+                    "Revista não está disponível para empréstimo.")
         if id_tese:
             is_thesis = True
+            # Verificar status da tese
+            tese_status = get_item_status("teses", id_tese)
+            if tese_status != "disponível":
+                raise ValueError("Tese não está disponível para empréstimo.")
 
         # Obter o tipo de usuário
         user_type = get_user_type(id_usuario)
@@ -241,43 +299,70 @@ def get_status_usuario(id_usuario):
 
 
 def calcular_multa(dias_atraso):
+    # Valor base da multa por dia de atraso
     valor_base = 2.50
-    multa = valor_base * dias_atraso
-    if dias_atraso > 30:
-        multa *= 2  # Multa dobra a cada 30 dias de atraso
-    return round(multa, 2)
+
+    # Inicializar a multa
+    multa = 0
+
+    # Calcular multa para os primeiros 30 dias
+    if dias_atraso <= 30:
+        multa = dias_atraso * valor_base
+    else:
+        multa += 30 * valor_base
+
+        # Calcular multa dobrada para os dias excedentes
+        dias_excedentes = dias_atraso - 30
+        multa_dobrada = valor_base * 2
+        for _ in range(dias_excedentes):
+            multa += multa_dobrada
+            multa_dobrada *= 2
+
+    return multa
 
 
-# ver emprestimo atrasado
-
-
-def get_emprestimos_atrasados():
-    conn = connect()
+def get_emprestimos_atrasados(data_atual_str):
+    # Conectar-se ao banco de dados
+    conn = sqlite3.connect('biblioteca.db')
     cursor = conn.cursor()
 
-    # Obter todos os empréstimos com data de devolução passada
-    cursor.execute("SELECT emprestimos.id, emprestimos.loan_type, usuarios.tipo_usuario, usuarios.status, emprestimos.data_devolucao, livros.titulo, revistas.titulo, teses.titulo \
-                    FROM emprestimos \
-                    INNER JOIN usuarios ON emprestimos.id_usuario = usuarios.id \
-                    LEFT JOIN livros ON emprestimos.id_livro = livros.id \
-                    LEFT JOIN revistas ON emprestimos.id_revista = revistas.id \
-                    LEFT JOIN teses ON emprestimos.id_tese = teses.id \
-                    WHERE emprestimos.data_devolucao < ? AND (usuarios.status = 'débito' OR usuarios.status = 'nada consta')", (datetime.now().date(),))
+    try:
+        # Converter a data atual para um objeto datetime.date
+        data_atual = datetime.strptime(data_atual_str, "%Y-%m-%d").date()
 
-    emprestimos_atrasados = cursor.fetchall()
-    dados = []
+        # Executar a consulta SQL para obter os empréstimos atrasados
+        cursor.execute("SELECT emprestimos.id, emprestimos.loan_type, usuarios.tipo_usuario, usuarios.status, emprestimos.data_devolucao, \
+                        livros.titulo AS livro_titulo, revistas.titulo AS revista_titulo, teses.titulo AS tese_titulo \
+                        FROM emprestimos \
+                        INNER JOIN usuarios ON emprestimos.id_usuario = usuarios.id \
+                        LEFT JOIN livros ON emprestimos.id_livro = livros.id \
+                        LEFT JOIN revistas ON emprestimos.id_revista = revistas.id \
+                        LEFT JOIN teses ON emprestimos.id_tese = teses.id")
 
-    for emprestimo in emprestimos_atrasados:
-        id_emprestimo, loan_type, tipo_usuario, status_usuario, data_devolucao, livro_titulo, revista_titulo, tese_titulo = emprestimo
-        titulo = livro_titulo if loan_type == 'Livro' else revista_titulo if loan_type == 'Revista' else tese_titulo
-        dias_atraso = (datetime.now().date() -
-                       datetime.strptime(data_devolucao, "%Y-%m-%d").date()).days
-        valor_multa = calcular_multa(dias_atraso)
-        dados.append((id_emprestimo, titulo, loan_type, tipo_usuario,
-                     status_usuario, dias_atraso, valor_multa))
+        # Recuperar os dados dos empréstimos
+        emprestimos = cursor.fetchall()
+        dados = []
 
-    conn.close()
-    return dados
+        for emprestimo in emprestimos:
+            id_emprestimo, loan_type, tipo_usuario, status_usuario, data_devolucao, livro_titulo, revista_titulo, tese_titulo = emprestimo
+            titulo = livro_titulo if loan_type == 'Livro' else revista_titulo if loan_type == 'Revista' else tese_titulo
+            # Convertendo data_devolucao para um objeto datetime.date
+            data_devolucao_date = datetime.strptime(
+                data_devolucao, "%Y-%m-%d").date()
+            # Verificando se o empréstimo está atrasado
+            if data_atual > data_devolucao_date:
+                # Calculando o atraso em dias
+                dias_atraso = (data_atual - data_devolucao_date).days
+                # Função para calcular a multa
+                valor_multa = calcular_multa(dias_atraso)
+                dados.append((id_emprestimo, titulo, loan_type,
+                             tipo_usuario, status_usuario, dias_atraso, valor_multa))
+
+        return dados
+
+    finally:
+        # Fechar a conexão com o banco de dados
+        conn.close()
 
 
 def update_loan_return_date(loan_id, return_date):
@@ -325,7 +410,7 @@ def verificar_emprestimo_existe(id_emprestimo):
     conn = sqlite3.connect('biblioteca.db')
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT COUNT(*) FROM emprestimos WHERE id=?", (id_emprestimo,))
+        "SELECT COUNT(*) FROM emprestimos WHERE id=? AND data_devolucao IS NULL", (id_emprestimo,))
     count = cursor.fetchone()[0]
     conn.close()
     return count > 0
@@ -417,6 +502,219 @@ def calculate_devolution_date(data_atual, tipo_usuario):
     if prazo_emprestimo is None:
         raise ValueError("Tipo de usuário inválido.")
     return data_atual + timedelta(days=prazo_emprestimo)
+
+
+def adicionar_emprestimos_atrasados(data_atual_str):
+    # Conectar-se ao banco de dados
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+
+    try:
+        # Converter a data atual para um objeto datetime.date
+        data_atual = datetime.strptime(data_atual_str, "%Y-%m-%d").date()
+
+        # Selecionar os empréstimos atrasados com base na data atual
+        cursor.execute("SELECT emprestimos.id, emprestimos.loan_type, usuarios.tipo_usuario, usuarios.status, emprestimos.data_devolucao, \
+                        livros.titulo AS livro_titulo, revistas.titulo AS revista_titulo, teses.titulo AS tese_titulo \
+                        FROM emprestimos \
+                        INNER JOIN usuarios ON emprestimos.id_usuario = usuarios.id \
+                        LEFT JOIN livros ON emprestimos.id_livro = livros.id \
+                        LEFT JOIN revistas ON emprestimos.id_revista = revistas.id \
+                        LEFT JOIN teses ON emprestimos.id_tese = teses.id \
+                        WHERE emprestimos.data_devolucao < ?", (data_atual,))
+
+        emprestimos_atrasados = cursor.fetchall()
+
+        # Inserir os empréstimos atrasados na tabela emprestimos_atrasados
+        for emprestimo in emprestimos_atrasados:
+            id_emprestimo, loan_type, tipo_usuario, status_usuario, data_devolucao, livro_titulo, revista_titulo, tese_titulo = emprestimo
+            titulo = livro_titulo if loan_type == 'Livro' else revista_titulo if loan_type == 'Revista' else tese_titulo
+            # Convertendo data_devolucao para um objeto datetime.date
+            data_devolucao_date = datetime.strptime(
+                data_devolucao, "%Y-%m-%d").date()
+            # Calculando o atraso em dias
+            dias_atraso = (data_atual - data_devolucao_date).days
+            # Função para calcular a multa
+            valor_multa = calcular_multa(dias_atraso)
+            # Inserir os dados na tabela emprestimos_atrasados
+            cursor.execute("INSERT INTO emprestimos_atrasados (id_emprestimo, titulo, tipo_emprestimo, tipo_usuario, status_usuario, dias_atraso, valor_multa) \
+                            VALUES (?, ?, ?, ?, ?, ?, ?)", (id_emprestimo, titulo, loan_type, tipo_usuario, status_usuario, dias_atraso, valor_multa))
+
+        # Commit das alterações no banco de dados
+        conn.commit()
+
+    finally:
+        # Fechar a conexão com o banco de dados
+        conn.close()
+
+
+def atualizar_status_debitos(id_usuario):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            "UPDATE usuarios SET status='Possuí débitos' WHERE id=?", (id_usuario,))
+        conn.commit()
+    except sqlite3.Error as e:
+        print("Erro ao atualizar status de débitos:", e)
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def calcular_multa_emprestimos_atrasados(id_usuario):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+
+    try:
+        # Obtendo empréstimos atrasados para o usuário
+        cursor.execute(
+            "SELECT COUNT(*) FROM emprestimos WHERE id_usuario=? AND data_devolucao < DATE('now')", (id_usuario,))
+        num_emprestimos_atrasados = cursor.fetchone()[0]
+
+        # Calculando o valor total da multa
+        valor_multa = num_emprestimos_atrasados * 2.50
+        if num_emprestimos_atrasados > 30:
+            # Cada 30 dias de atraso, a multa dobra de valor
+            excedente_dias = num_emprestimos_atrasados - 30
+            for _ in range(excedente_dias):
+                valor_multa *= 2
+
+        return valor_multa
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def lista_id_emprestimos_atrasados():
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT DISTINCT id_emprestimo FROM emprestimos_atrasados')
+    ids_emprestimos_atrasados = cursor.fetchall()
+    conn.close()
+
+    # Extrair os ids e retornar como um conjunto
+    return {id_[0] for id_ in ids_emprestimos_atrasados}
+
+
+def atualizar_ids_emprestimos_atrasados():
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT DISTINCT id_emprestimo FROM emprestimos_atrasados')
+    ids_emprestimos_atrasados = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return set(ids_emprestimos_atrasados)
+
+
+def deletar_emprestimo_atrasado(id_emprestimo):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        'DELETE FROM emprestimos_atrasados WHERE id_emprestimo = ?', (id_emprestimo,))
+    conn.commit()
+    conn.close()
+
+
+def pagar_multa_bd(id_emprestimo, valor_multa_pago):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+
+    # Verificar se o ID do empréstimo existe na lista de empréstimos atrasados
+    ids_emprestimos_atrasados = lista_id_emprestimos_atrasados()
+
+    if id_emprestimo not in ids_emprestimos_atrasados:
+        conn.close()
+        messagebox.showerror("Erro", "O ID do empréstimo não existe.")
+        return
+
+    # Excluir todas as linhas com o id_emprestimo especificado
+    deletar_emprestimo_atrasado(id_emprestimo)
+
+    # Inserir o pagamento na tabela de histórico de pagamentos
+    data_pagamento = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cursor.execute('INSERT INTO historico_pagamentos (id_emprestimo, data_pagamento, valor_pago) VALUES (?, ?, ?)',
+                   (id_emprestimo, data_pagamento, valor_multa_pago))
+
+    # Verificar se o valor do pagamento é igual ao valor da multa
+    cursor.execute(
+        'SELECT DISTINCT id_emprestimo FROM emprestimos_atrasados')
+    updated_ids = set(cursor.fetchall())
+
+    conn.commit()
+    conn.close()
+
+    messagebox.showinfo("Sucesso", "Pagamento feito com sucesso!")
+
+    return updated_ids
+
+
+def obter_valor_multa(id_emprestimo_atrasado):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT valor_multa FROM emprestimos_atrasados WHERE id_emprestimo_atrasado = ?', (id_emprestimo_atrasado,))
+    valor_multa = cursor.fetchone()[0]
+    conn.close()
+    return valor_multa
+
+
+def tem_emprestimos_atrasados(id_usuario):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT COUNT(*) FROM emprestimos_atrasados WHERE id_emprestimo = ?', (id_usuario,))
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count > 0
+
+
+def obter_id_usuario_por_emprestimo(id_emprestimo):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT id_usuario FROM emprestimos WHERE id = ?', (id_emprestimo,))
+    id_usuario = cursor.fetchone()[0]
+    conn.close()
+    return id_usuario
+
+
+def atualizar_status_usuario(usuario_id, status):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+
+    # Atualizar o status do usuário com o ID fornecido
+    cursor.execute("UPDATE usuarios SET status = ? WHERE id = ?",
+                   (status, usuario_id))
+
+    # Commit para salvar as alterações
+    conn.commit()
+
+    # Fechar a conexão com o banco de dados
+    conn.close()
+
+
+def verificar_id_emprestimo_historico_pagamentos(id_emprestimo):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM historico_pagamentos WHERE id_emprestimo = ?", (id_emprestimo,))
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count > 0
+
+
+def verificar_emprestimo_atrasado(loan_id):
+    conn = sqlite3.connect('biblioteca.db')
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT COUNT(*) FROM emprestimos_atrasados WHERE id_emprestimo = ?', (loan_id,))
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count > 0
 
 
 # insert_book("One Piece", "Oda", "Nao sei", 5662, "5788598270692")

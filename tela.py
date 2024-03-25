@@ -7,7 +7,7 @@ from tkinter.ttk import *
 from tkinter import *
 from tkinter import Tk, ttk
 from tkinter import messagebox, Label
-
+from tkcalendar import Calendar
 
 from PIL import Image, ImageTk
 
@@ -45,62 +45,51 @@ class InterfaceInicial:
         self.root = root
         self.root.title("")
         self.root.geometry('500x300')
-        self.root.configure(background=co1)
+        self.root.configure(background="white")
         self.root.resizable(width=False, height=False)
 
-        style = Style(root)
-        style.theme_use("clam")
+        self.data_label = Label(
+            root, text="Digite a Data (YYYY-MM-DD):", bg="white")
+        self.data_label.pack(pady=10)
 
-        # Logo (substitua pelo caminho da sua logo)
-        self.logo_label = Label(
-            root, text="Sua Logo Aqui", bg=co1, fg=co0, font=("Arial", 24))
-        self.logo_label.pack(pady=20)
-
-        # Breve frase
-        self.frase_label = Label(
-            root, text="Bem-vindo ao Sistema de Gerenciamento", bg=co1, fg=co0, font=("Arial", 16))
-        self.frase_label.pack()
-
-        # Campos para inserir data e hora
         self.data_entry = Entry(root, width=20)
-        self.data_entry.insert(0, "AAAA-MM-DD")
         self.data_entry.pack()
 
+        self.hora_label = Label(
+            root, text="Insira a Hora (HH:MM):", bg="white")
+        self.hora_label.pack()
+
         self.hora_entry = Entry(root, width=20)
-        self.hora_entry.insert(0, "HH:MM")
         self.hora_entry.pack()
 
-        # Botão "Confirmar"
         self.confirmar_button = Button(
-            root, text="Confirmar", command=self.verificar_data_hora, bg=co2, fg=co1)
+            root, text="Confirmar", command=self.verificar_data_hora)
         self.confirmar_button.pack(pady=20)
 
     def verificar_data_hora(self):
-        data = self.data_entry.get()
+        data_selecionada_str = self.data_entry.get()
         hora = self.hora_entry.get()
 
         try:
-            # Verifica se a data e a hora estão no formato correto
-            datetime.strptime(data, "%Y-%m-%d")
+            # Verifica se a data está no formato correto
+            data_selecionada_obj = datetime.strptime(
+                data_selecionada_str, "%Y-%m-%d")
+            data_selecionada = data_selecionada_obj.strftime("%Y-%m-%d")
+
+            # Verifica se a hora está no formato correto
             datetime.strptime(hora, "%H:%M")
 
-            # Exibe mensagem com data e hora adicionadas
-            resposta = messagebox.askquestion("Confirmação", f"Data: {data}\nHora: {
-                                              hora}\nIniciar o programa?")
+            resposta = messagebox.askquestion(
+                "Confirmação", f"Data: {data_selecionada}\nHora: {hora}\nIniciar o programa?")
             if resposta == "yes":
-                # Inicia o programa principal
-                self.root.destroy()  # Fecha a janela de interface inicial
-                iniciar_programa(data, hora)
-            else:
-                # Reexibe a interface inicial
-                self.data_entry.delete(0, 'end')
-                self.hora_entry.delete(0, 'end')
+                self.root.destroy()
+                iniciar_programa(data_selecionada, hora)
         except ValueError:
             messagebox.showerror(
-                "Erro", "Formato de data ou hora inválido. Use AAAA-MM-DD e HH:MM.")
+                "Erro", "Formato de data ou hora inválido. Use YYYY-MM-DD para data e HH:MM para hora.")
 
 
-def iniciar_programa(data, hora):
+def iniciar_programa(data_atual, hora):
     # Aqui você pode chamar a função principal do seu sistema de gerenciamento
     # Por exemplo: janela_principal()
     janela = Tk()
@@ -144,6 +133,15 @@ def iniciar_programa(data, hora):
     l_linha = Label(frameCima, width=1570, height=1, anchor=NW,
                     font=('Verdana 1 '), bg=co3, fg=co1)
     l_linha.place(x=0, y=93)
+
+    def on_close():
+        # Chame a função para limpar a tabela emprestimos_atrasados
+        clear_overdue_loans()
+        # Feche a janela
+        janela.destroy()
+
+    # Configure o tratamento de evento de fechamento da janela
+    janela.protocol("WM_DELETE_WINDOW", on_close)
 
     # Novo usuario
 
@@ -564,9 +562,11 @@ def iniciar_programa(data, hora):
             else:
                 user_type_str = "Tipo não especificado"
 
+            # Obtendo o ID do usuário
+            user_id = item[0]
+
             # Calculando o valor total da multa
-            # Coloque o número de dias de atraso aqui
-            valor_multa = calcular_multa(10)
+            valor_multa = calcular_multa_emprestimos_atrasados(user_id)
             if valor_multa == 0.0:
                 multa_str = "Nada Consta"
             else:
@@ -575,7 +575,9 @@ def iniciar_programa(data, hora):
 
             tree.insert('', 'end', values=item + (user_type_str, multa_str))
 
-    # funcao ver livros
+            # Verificar e atualizar o status para "Possuí débitos" se necessário
+            if valor_multa > 0.0 and item[7] != "Possuí débitos":
+                atualizar_status_debitos(user_id)
 
     # Função para exibir todos os livros
 
@@ -853,7 +855,6 @@ def iniciar_programa(data, hora):
                           width=200, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
         b_salvar.grid(row=7, column=1, pady=5, sticky=NSEW)
 
-    # tela.py part 2
     # livros emprestados no momento
 
     def ver_livros_emprestados():
@@ -924,7 +925,10 @@ def iniciar_programa(data, hora):
 
     # Atrasos no momento
 
-    def ver_emprestimos_atrasados():
+    def ver_emprestimos_atrasados(data_atual_str):
+        # Verificar os empréstimos atrasados com base na data atual
+        adicionar_emprestimos_atrasados(data_atual_str)
+
         # Cabeçalho
         app_ = Label(frameDireita, text="Empréstimos atrasados e multas", width=100, compound=LEFT,
                      padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
@@ -935,15 +939,45 @@ def iniciar_programa(data, hora):
                         anchor=NW, font=('Verdana 1 '), bg=co3, fg=co1)
         l_linha.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
-        # Obter dados dos empréstimos atrasados
-        dados = get_emprestimos_atrasados()
-
         # Cabeçalhos da lista
-        list_header = ['ID Empréstimo', 'Título',
-                       'Tipo do Empréstimo', 'Dias de Atraso', 'Valor da Multa']
+        list_header = ['ID Empréstimo', 'Título', 'Tipo do Empréstimo',
+                       'Tipo de Usuário', 'Status do Usuário', 'Dias de Atraso', 'Valor da Multa']
 
-        # Criar Treeview com scrollbars
-        create_treeview(dados, list_header)
+        # Criar Treeview
+        global tree
+        tree = ttk.Treeview(frameDireita, selectmode="extended",
+                            columns=list_header, show="headings")
+        vsb = ttk.Scrollbar(
+            frameDireita, orient="vertical", command=tree.yview)
+        hsb = ttk.Scrollbar(
+            frameDireita, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        tree.grid(column=0, row=2, sticky='nsew')
+        vsb.grid(column=1, row=2, sticky='ns')
+        hsb.grid(column=0, row=3, sticky='ew')
+        frameDireita.grid_rowconfigure(0, weight=12)
+
+        # Larguras das colunas e alinhamentos
+        # 6 elementos, correspondendo aos 6 cabeçalhos
+        hd = ["nw", "nw", "ne", "ne", "ne", "ne", "ne"]
+        # 6 elementos, correspondendo às larguras das colunas
+        h = [20, 175, 120, 90, 90, 90, 90]
+
+        # Configurar cabeçalhos e larguras das colunas
+        for col, width, anchor in zip(list_header, h, hd):
+            tree.heading(col, text=col, anchor='nw')
+            tree.column(col, width=width, anchor=anchor)
+
+        # Obter os empréstimos atrasados
+        emprestimos_atrasados = get_emprestimos_atrasados(data_atual_str)
+
+        # Inserir dados na treeview
+        for emprestimo in emprestimos_atrasados:
+            id_emprestimo, titulo, loan_type, tipo_usuario, status_usuario, dias_atraso, valor_multa = emprestimo
+            # Adicionando os dados ao Treeview
+            tree.insert('', 'end', values=(id_emprestimo, titulo, loan_type, tipo_usuario,
+                                           status_usuario, dias_atraso, valor_multa))
+
 
     def create_treeview(dados, list_header):
         # Criar Treeview com scrollbars
@@ -1001,37 +1035,17 @@ def iniciar_programa(data, hora):
             if not verificar_emprestimo_existe(loan_id):
                 messagebox.showerror('Erro', 'Empréstimo não encontrado.')
                 return
-
-            # Verificar se a data de retorno está dentro do intervalo permitido
-            data_emprestimo, data_devolucao = obter_datas_emprestimo(loan_id)
-            data_atual = datetime.strptime(return_date, '%Y-%m-%d').date()
-            if data_atual < data_emprestimo or data_atual > data_devolucao:
-                messagebox.showerror(
-                    'Erro', 'Data atual fora do intervalo permitido.')
-                return
-
-            # Verificar se o usuário possui débitos
-            if verificar_debitos_usuario(loan_id):
-                messagebox.showerror(
-                    'Erro', 'Você possui débitos. Não pode realizar a devolução.')
-                return
-
-            # Verificar se a data atual é posterior à data de devolução
-            if data_atual > data_devolucao:
-                messagebox.showerror(
-                    'Erro', 'A data atual é posterior à data de devolução. Você possui débitos.')
-                return
-
-            # Perguntar ao usuário se deseja renovar o empréstimo
-            resposta = messagebox.askyesno(
-                'Renovar empréstimo', 'Deseja renovar o empréstimo?')
-            if resposta:
-                try:
-                    renovar_emprestimo(loan_id, data_atual)
+            # Verificar se o empréstimo está atrasado
+            if verificar_emprestimo_atrasado(loan_id):
+                # Verificar se o empréstimo está no histórico de pagamentos
+                if not verificar_id_emprestimo_historico_pagamentos(loan_id):
+                    messagebox.showerror(
+                        'Erro', 'Empréstimo não encontrado no histórico de pagamentos.')
+                    return
+                else:
+                    realizar_devolucao_emprestimo(loan_id)
                     messagebox.showinfo(
-                        'Sucesso', 'Empréstimo renovado com sucesso.')
-                except Exception as e:
-                    messagebox.showerror('Erro', str(e))
+                        'Sucesso', 'Empréstimo devolvido com sucesso.')
             else:
                 realizar_devolucao_emprestimo(loan_id)
                 messagebox.showinfo(
@@ -1074,32 +1088,23 @@ def iniciar_programa(data, hora):
     # Pagar multa de um emprestimo
 
     def pagar_multa():
-
         global img_salvar
 
         def add():
+            loan_id_atrasado = e_id_emprestimo.get()
+            valor_multa_pago = e_data_retorno.get()
 
-            loan_id = e_id_emprestimo.get()
-            return_date = e_data_retorno.get()
+            # Verificar se ambos os campos foram preenchidos
+            if not loan_id_atrasado or not valor_multa_pago:
+                messagebox.showerror("Erro", "Digite em todos os campos.")
+                return
 
-            lista = [loan_id, return_date]
+            # Realizar o pagamento da multa
+            pagar_multa_bd(int(loan_id_atrasado), float(valor_multa_pago))
 
-            # Verificando caso algum campo esteja vazio ou nao
-            for i in lista:
-                if i == '':
-                    messagebox.showerror('Erro', 'Preencha todos os campos')
-                    return
-
-            # Inserindo os dados no banco de dados
-            update_loan_return_date(loan_id, return_date)
-
-            # Mostrando mesnsagem de sucesso
-            messagebox.showinfo(
-                'Sucesso', 'Data de devolução atualizada com sucesso!')
-
-            # limpando os campos de entradas
-            e_id_emprestimo.delete(0, END)
-            e_data_retorno.delete(0, END)
+            # Limpar os campos de entrada
+            e_id_emprestimo.delete(0, 'end')
+            e_data_retorno.delete(0, 'end')
 
         app_ = Label(frameDireita, text="Pagar as multas atrasadas", width=100, compound=LEFT,
                      padx=5, pady=10, relief=FLAT, anchor=NW, font=('Verdana 12'), bg=co1, fg=co4)
@@ -1115,7 +1120,7 @@ def iniciar_programa(data, hora):
                                 justify='left', relief="solid")
         e_id_emprestimo.grid(row=2, column=1, pady=10, sticky=NSEW)
 
-        l_data_retorno = Label(frameDireita, text="valor total da multa:*",
+        l_data_retorno = Label(frameDireita, text="Valor total da multa:*",
                                height=1, anchor=NW, font=(' Ivy 10'), bg=co1, fg=co4)
         l_data_retorno.grid(row=3, column=0, padx=5, pady=5, sticky=NSEW)
         e_data_retorno = Entry(frameDireita, width=30,
@@ -1130,12 +1135,9 @@ def iniciar_programa(data, hora):
         b_salvar = Button(frameDireita, command=add, image=img_salvar, compound=LEFT,
                           width=200, text='  Salvar', bg=co1, fg=co4, font=('Ivy 11'), overrelief=RIDGE)
         b_salvar.grid(row=4, column=1, pady=5, sticky=NSEW)
-
-    # Frame Esquerda --------------------------------------------------
-
     # Funcao para controlar o Menu
 
-    def control(i):
+    def control(i, data_atual=None):
 
         # novo usuario
         if i == 'novo_usuario':
@@ -1213,7 +1215,7 @@ def iniciar_programa(data, hora):
         if i == 'ver_emprestimos_atrasados':
             for widget in frameDireita.winfo_children():
                 widget.destroy()
-            ver_emprestimos_atrasados()
+            ver_emprestimos_atrasados(data_atual)
 
         # Devolução de um empréstimo
         if i == 'devolucao_emprestimo':
@@ -1357,7 +1359,7 @@ def iniciar_programa(data, hora):
         'c:/Users/ExPed/OneDrive/Área de Trabalho/Python/Biblioteca/images/livro2.png')
     img_emprestimos_atrasados = img_emprestimos_atrasados.resize((36, 36))
     img_emprestimos_atrasados = ImageTk.PhotoImage(img_emprestimos_atrasados)
-    b_emprestimos_atrasados = Button(frameEsquerda, command=lambda: control('ver_emprestimos_atrasados'), image=img_emprestimos_atrasados,
+    b_emprestimos_atrasados = Button(frameEsquerda, command=lambda: control('ver_emprestimos_atrasados', data_atual), image=img_emprestimos_atrasados,
                                      compound=LEFT, anchor=NW, text=' Atrasos no momento', bg=co4, fg=co1, font=('Ivy 11'), overrelief=RIDGE, relief=GROOVE)
     b_emprestimos_atrasados.grid(row=7, column=1, sticky=NSEW, padx=5, pady=6)
 
@@ -1366,4 +1368,6 @@ def iniciar_programa(data, hora):
 
 root = Tk()
 app = InterfaceInicial(root)
+
+
 root.mainloop()
